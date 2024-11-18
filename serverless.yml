@@ -1,0 +1,57 @@
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: test-offline-serverless
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+      - httpApi:
+          path: /
+          method: get
+  sendMessage:
+    handler: handler.sendMessage
+    events:
+      - httpApi:
+          path: sendMessage
+          method: get
+  processMessage:
+    handler: handler.processMessage
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [MyQueue, Arn]
+          batchSize: 5
+
+resources:
+  Resources:
+    MyQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: myQueue
+
+custom:
+  # Custom config for serverless-offline-sqs
+  # serverless-offline-sqs:
+  #   autoCreate: true     
+  #   port: 9324  # Port for the local SQS emulator
+  #   queues:
+  #     myQueue: # Name of your queue
+  #       # Define any queue properties you need here, e.g., visibilityTimeout
+  #       visibilityTimeout: 30
+  serverless-offline-sqs:
+    autoCreate: true                 
+    apiVersion: '2012-11-05'
+    endpoint: http://0.0.0.0:9324    # Endpoint where you will publish SQS message
+    region: eu-west-1              # Your preferred AWS region
+    accessKeyId: root
+    secretAccessKey: root
+    skipCacheInvalidation: false
+
+plugins:
+  - serverless-offline-sqs
+  - serverless-offline
